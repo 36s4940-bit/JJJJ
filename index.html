@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>변기 물내림 구별 프로그램 | IN And OUT</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #F5F7FA;
+            --text-color: #333333;
+            --box-bg: #FFFFFF;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px 10px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--box-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid #EEE;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        header p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        section {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .info-box {
+            background-color: #F9FAFC;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border: 1px solid #E4E7EB;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+        }
+
+        .model-section {
+            background-color: #EBF4FF;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #D1E1FA;
+        }
+
+        #status {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #0056B3;
+            min-height: 24px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #FFF;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            min-width: 120px;
+            transition: background-color 0.2s;
+        }
+
+        button:disabled {
+            background-color: #A0C3EB;
+            cursor: not-allowed;
+        }
+
+        button.stop-btn {
+            background-color: #E74C3C;
+        }
+        button.stop-btn:disabled {
+            background-color: #F1A9A0;
+        }
+
+        .file-upload {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #A0C3EB;
+        }
+        
+        .file-upload label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .file-upload input[type="file"] {
+            width: 100%;
+            padding: 10px 0;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .results-container {
+            margin-top: 20px;
+            min-height: 120px; /* UI 흔들림 방지 */
+        }
+
+        .bar-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .bar-label {
+            width: 90px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bar-track {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #DFE6ED;
+            border-radius: 10px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.1s ease-out;
+        }
+
+        .bar-percent {
+            width: 45px;
+            font-size: 0.85rem;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .top-prediction {
+            margin-top: 15px;
+            text-align: center;
+            padding: 15px;
+            background-color: #FFF3CD;
+            border: 1px solid #FFEEBA;
+            border-radius: 8px;
+            color: #856404;
+        }
+
+        .top-prediction strong {
+            font-size: 1.2rem;
+            color: #D32F2F;
+        }
+
+        .top-prediction small {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>변기 물내림 구별 프로그램</h1>
+            <p>화장실 에티켓을 돕는 인공지능 소리 분류기</p>
+        </header>
+
+        <section class="info-section">
+            <h2>프로젝트 안내</h2>
+            <div class="info-box">
+                <p><strong>해결하려는 문제:</strong> 화장실에서 물을 안내리고 가는 학생들로 인해 다음 사용자가 겪는 시각적, 정서적 피해 예방</p>
+                <p><strong>주요 사용자:</strong> 한영외고 학생들</p>
+                <p><strong>분류 항목:</strong> 물 내림 / 물 안내림 / 배경소음</p>
+            </div>
+        </section>
+
+        <section class="model-section">
+            <h2>모델 체험하기</h2>
+            <div id="status">입력 방식을 선택하여 모델을 시작해주세요.</div>
+            
+            <div class="controls">
+                <button id="btn-mic">마이크 시작</button>
+                <button id="btn-stop" class="stop-btn" disabled>중지</button>
+            </div>
+
+            <div class="file-upload">
+                <label for="audio-upload">또는 오디오 파일로 확인하기:</label>
+                <input type="file" id="audio-upload" accept="audio/*">
+                <audio id="audio-player" controls style="display:none;"></audio>
+            </div>
+
+            <div id="results" class="results-container">
+                </div>
+
+            <div id="top-prediction" class="top-prediction" style="display: none;">
+                </div>
+        </section>
+
+        <section class="info-section">
+            <h2>사람의 확인이 필요한 경우</h2>
+            <div class="info-box">
+                <p><strong>모델의 한계:</strong> 시스템 기본 소음인 '배경소음'과 '물 안내림' 소리를 완벽히 구분하는 데 어려움이 있을 수 있습니다.</p>
+                <p><strong>주의사항:</strong> 물 내림 소리가 들렸음에도 변기가 막혀서 실제로는 물이 안 내려갔을 수 있으므로, 최종적으로는 사람의 확인이 불가피합니다.</p>
+            </div>
+        </section>
+
+        <footer>
+            <p><strong>팀명:</strong> IN And OUT | <strong>팀원:</strong> 박지원, 안예지</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+
+    <script>
+        // 프로젝트 모델 주소
+        const URL = "https://teachablemachine.withgoogle.com/models/KehN6RK0T/";
+        
+        let recognizer;
+        let isPredicting = false;
+        let currentObjectURL = null;
+
+        // HTML 요소 연결
+        const statusEl = document.getElementById('status');
+        const btnMic = document.getElementById('btn-mic');
+        const btnStop = document.getElementById('btn-stop');
+        const fileInput = document.getElementById('audio-upload');
+        const audioPlayer = document.getElementById('audio-player');
+        const resultsEl = document.getElementById('results');
+        const topPredEl = document.getElementById('top-prediction');
+
+        // 모델 로딩 함수
+        async function loadModel() {
+            if (recognizer) return true; // 이미 로딩되었다면 통과
+            
+            statusEl.innerText = "모델을 불러오는 중입니다... 잠시만 기다려주세요.";
+            try {
+                const checkpointURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+
+                recognizer = speechCommands.create(
+                    "BROWSER_FFT",
+                    undefined,
+                    checkpointURL,
+                    metadataURL
+                );
+
+                await recognizer.ensureModelLoaded();
+                initResultBars(recognizer.wordLabels()); // 메타데이터의 실제 클래스 이름으로 막대 생성
+                return true;
+            } catch (error) {
+                statusEl.innerText = "오류: 모델을 불러오지 못했습니다. 주소를 확인해주세요.";
+                console.error(error);
+                return false;
+            }
+        }
+
+        // 결과 막대 UI 초기화 함수
+        function initResultBars(labels) {
+            resultsEl.innerHTML = '';
+            labels.forEach((label, index) => {
+                const container = document.createElement('div');
+                container.className = 'bar-container';
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'bar-label';
+                labelDiv.innerText = label;
+
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'bar-track';
+
+                const fillDiv = document.createElement('div');
+                fillDiv.className = 'bar-fill';
+                fillDiv.id = `bar-fill-${index}`;
+
+                const percentDiv = document.createElement('div');
+                percentDiv.className = 'bar-percent';
+                percentDiv.id = `bar-percent-${index}`;
+                percentDiv.innerText = '0%';
+
+                trackDiv.appendChild(fillDiv);
+                container.appendChild(labelDiv);
+                container.appendChild(trackDiv);
+                container.appendChild(percentDiv);
+                resultsEl.appendChild(container);
+            });
+        }
+
+        // 예측 결과 화면 갱신 함수
+        function renderResults(scores) {
+            const labels = recognizer.wordLabels();
+            let maxScore = 0;
+            let maxLabel = '';
+
+            for (let i = 0; i < labels.length; i++) {
+                const score = scores[i];
+                const percent = (score * 100).toFixed(0);
+                
+                // 막대 그래프 업데이트
+                document.getElementById(`bar-fill-${i}`).style.width = percent + '%';
+                document.getElementById(`bar-percent-${i}`).innerText = percent + '%';
+
+                // 최고 확률 찾기
+                if (score > maxScore) {
+                    maxScore = score;
+                    maxLabel = labels[i];
+                }
+            }
+
+            // 최고 확률 클래스 강조
+            topPredEl.style.display = 'block';
+            topPredEl.innerHTML = `가장 높은 확률: <strong>${maxLabel}</strong><br><small>(주의: 가장 높은 확률이 반드시 정답은 아닙니다.)</small>`;
+        }
+
+        // 중복 실행 및 이전 상태 정리 함수
+        function stopPredicting() {
+            if (isPredicting && recognizer) {
+                try {
+                    recognizer.stopListening();
+                } catch (e) {
+                    console.log("Listening 멈춤 오류 무시:", e);
+                }
+                isPredicting = false;
+            }
+            audioPlayer.pause();
+            btnMic.disabled = false;
+            btnStop.disabled = true;
+            statusEl.innerText = "분석이 중지되었습니다. 다시 시작하려면 버튼을 누르세요.";
+        }
+
+        // 마이크 시작 이벤트
+        btnMic.addEventListener('click', async () => {
+            if (isPredicting) return;
+            
+            // 이미지/파일 모드 초기화
+            fileInput.value = ''; 
+            audioPlayer.style.display = 'none';
+
+            const loaded = await loadModel();
+            if (!loaded) return;
+
+            try {
+                statusEl.innerText = "마이크 권한을 확인 중입니다...";
+                
+                // 티처블 머신 음성 모델 실시간 분석 시작
+                await recognizer.listen(result => {
+                    renderResults(result.scores);
+                }, {
+                    includeSpectrogram: true,
+                    probabilityThreshold: 0.75,
+                    invokeCallbackOnNoiseAndUnknown: true,
+                    overlapFactor: 0.50
+                });
+
+                isPredicting = true;
+                btnMic.disabled = true;
+                btnStop.disabled = false;
+                statusEl.innerText = "마이크로 실시간 소리를 분석 중입니다.";
+            } catch (err) {
+                statusEl.innerText = "오류: 마이크 권한이 거부되었거나 장치를 사용할 수 없습니다.";
+                console.error(err);
+            }
+        });
+
+        // 파일 업로드 이벤트
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // 음성 파일 형식 검사
+            if (!file.type.startsWith('audio/')) {
+                statusEl.innerText = "오류: 올바른 오디오 파일 형식이 아닙니다.";
+                fileInput.value = '';
+                return;
+            }
+
+            // 이전 실행 정리
+            stopPredicting();
+            if (currentObjectURL) {
+                URL.revokeObjectURL(currentObjectURL);
+            }
+
+            const loaded = await loadModel();
+            if (!loaded) return;
+
+            // 파일 미리듣기 생성
+            currentObjectURL = URL.createObjectURL(file);
+            audioPlayer.src = currentObjectURL;
+            audioPlayer.style.display = 'block';
+            
+            // HTMLMediaElement.captureStream()을 이용한 웹 오디오 라우팅 우회 (음성 파일 분석용)
+            // 브라우저 지원 여부에 따라 마이크 권한 우회 처리를 진행합니다.
+            const captureMethod = audioPlayer.captureStream || audioPlayer.mozCaptureStream;
+            
+            if (captureMethod) {
+                const stream = captureMethod.call(audioPlayer);
+                const originalGUM = navigator.mediaDevices.getUserMedia;
+                
+                // Teachable Machine 라이브러리가 마이크 대신 업로드된 오디오 스트림을 읽도록 덮어쓰기
+                navigator.mediaDevices.getUserMedia = () => Promise.resolve(stream);
+
+                try {
+                    statusEl.innerText = "오디오 파일을 분석 중입니다...";
+                    await audioPlayer.play();
+                    
+                    await recognizer.listen(result => {
+                        renderResults(result.scores);
+                    }, {
+                        includeSpectrogram: true,
+                        probabilityThreshold: 0.75,
+                        invokeCallbackOnNoiseAndUnknown: true,
+                        overlapFactor: 0.50
+                    });
+
+                    isPredicting = true;
+                    btnMic.disabled = false;
+                    btnStop.disabled = false;
+                    
+                    // 오디오 재생이 끝나면 자동 중지
+                    audioPlayer.onended = stopPredicting;
+                } catch (err) {
+                    statusEl.innerText = "오류: 오디오 파일을 분석할 수 없습니다.";
+                    console.error(err);
+                } finally {
+                    // 원상 복구
+                    navigator.mediaDevices.getUserMedia = originalGUM;
+                }
+            } else {
+                statusEl.innerText = "오류: 현재 브라우저 환경에서는 오디오 파일 실시간 분석을 지원하지 않습니다. 마이크 입력을 사용해주세요.";
+            }
+        });
+
+        // 중지 버튼 이벤트
+        btnStop.addEventListener('click', stopPredicting);
+
+    </script>
+</body>
+</html>
